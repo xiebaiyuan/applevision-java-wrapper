@@ -35,4 +35,9 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Store!/applevision-ocr-1.0-complete.jar
+
+!/applevision-ocr-0.0.1-complete.jar
+
+!/TestSystemInfo.class
+.gradle

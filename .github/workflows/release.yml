@@ -83,16 +83,9 @@ jobs:
         echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "is_release=true" >> $GITHUB_OUTPUT
         
-    - name: Update version in build script
-      run: |
-        # 更新 build.sh 中的版本号
-        sed -i '' 's/applevision-ocr-[0-9]\+\.[0-9]\+\.[0-9]\+\.jar/applevision-ocr-${{ steps.get_version.outputs.version }}.jar/g' build.sh || true
-        
-        # 更新 deploy.sh 中的版本号
-        sed -i '' 's/applevision-ocr-[0-9]\+\.[0-9]\+\.[0-9]\+\.jar/applevision-ocr-${{ steps.get_version.outputs.version }}.jar/g' deploy.sh || true
-        sed -i '' 's/applevision-ocr-[0-9]\+\.[0-9]\+\.[0-9]\+-complete\.jar/applevision-ocr-${{ steps.get_version.outputs.version }}-complete.jar/g' deploy.sh || true
-        
     - name: Build project
+      env:
+        VERSION: ${{ steps.get_version.outputs.version }}
       run: |
         chmod +x build.sh
         ./build.sh
@@ -105,9 +98,11 @@ jobs:
         echo "Test passed (mocked)"
         
     - name: Create deployment package
+      env:
+        VERSION: ${{ steps.get_version.outputs.version }}
       run: |
         chmod +x deploy.sh
-        ./deploy.sh
+        ./deploy.sh ${{ steps.get_version.outputs.version }}
         
         # 验证构建产物
         ls -la *.jar
