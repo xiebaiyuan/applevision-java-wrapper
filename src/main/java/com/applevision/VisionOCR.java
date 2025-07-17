@@ -1,13 +1,16 @@
 package com.applevision;
 
+import com.applevision.util.NativeLibraryLoader;
 import java.io.File;
 import java.util.List;
 
 public class VisionOCR {
     static {
         try {
-            System.loadLibrary("applevision");
-        } catch (UnsatisfiedLinkError e) {
+            // 使用工具类加载本地库
+            NativeLibraryLoader.validateSystemRequirements();
+            NativeLibraryLoader.loadLibrary();
+        } catch (RuntimeException e) {
             System.err.println("Native code library failed to load: " + e.getMessage());
             throw e;
         }

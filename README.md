@@ -92,6 +92,336 @@
    mkdir -p build/libs/native
    cp src/main/cpp/libapplevision.dylib build/libs/native/
    ```
+## 在其他Java项目中使用
+
+### 方式1：使用JAR文件
+
+1. **构建JAR文件**：
+   ```bash
+   ./build.sh
+   ```
+
+2. **复制必要文件到目标项目**：
+   ```bash
+   # 复制JAR文件
+   cp build/libs/applevision-ocr-1.0.jar /path/to/your/project/libs/
+   
+   # 复制本地库
+   cp build/libs/native/libapplevision.dylib /path/to/your/project/native/
+   ```
+
+3. **在目标项目中配置**：
+   ```bash
+   # 编译时
+   javac -cp libs/applevision-ocr-1.0.jar:. YourClass.java
+   
+   # 运行时
+   java -Djava.library.path=native -cp libs/applevision-ocr-1.0.jar:. YourClass
+   ```
+
+### 方式2：Maven项目集成
+
+1. **安装到本地Maven仓库**：
+   ```bash
+   ./build.sh
+   mvn install:install-file -Dfile=build/libs/applevision-ocr-1.0.jar \
+     -DgroupId=com.applevision \
+     -DartifactId=applevision-java-wrapper \
+     -Dversion=1.0 \
+     -Dpackaging=jar
+   ```
+
+2. **在目标项目的pom.xml中添加依赖**：
+   ```xml
+   <dependency>
+       <groupId>com.applevision</groupId>
+       <artifactId>applevision-java-wrapper</artifactId>
+       <version>1.0</version>
+   </dependency>
+   ```
+
+3. **复制本地库到项目资源目录**：
+   ```bash
+   mkdir -p src/main/resources/native
+   cp build/libs/native/libapplevision.dylib src/main/resources/native/
+   ```
+
+4. **在Java代码中加载本地库**：
+   ```java
+   public class YourClass {
+       static {
+           // 从资源目录加载本地库
+           String libPath = "/native/libapplevision.dylib";
+           try (InputStream is = YourClass.class.getResourceAsStream(libPath)) {
+               if (is != null) {
+                   Path tempLib = Files.createTempFile("libapplevision", ".dylib");
+                   Files.copy(is, tempLib, StandardCopyOption.REPLACE_EXISTING);
+                   System.load(tempLib.toString());
+               }
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+       }
+   }
+   ```
+
+### 方式3：Gradle项目集成
+
+1. **在build.gradle中添加**：
+   ```gradle
+   repositories {
+       flatDir {
+           dirs 'libs'
+       }
+   }
+   
+   dependencies {
+       implementation name: 'applevision-ocr', version: '1.0'
+   }
+   ```
+
+2. **创建项目结构**：
+   ```bash
+   mkdir -p libs native
+   cp build/libs/applevision-ocr-1.0.jar libs/
+   cp build/libs/native/libapplevision.dylib native/
+   ```
+
+3. **配置JVM参数**：
+   ```gradle
+   run {
+       jvmArgs = ["-Djava.library.path=native"]
+   }
+   ```
+
+### 方式4：使用内置工具类（推荐）
+
+本项目提供了 `NativeLibraryLoader` 工具类，简化了本地库的加载过程：
+
+1. **基本使用**：
+   ```java
+   import com.applevision.VisionOCR;
+   import com.applevision.OCRResult;
+   import com.applevision.util.NativeLibraryLoader;
+   import java.util.List;
+   
+   public class MyApp {
+       public static void main(String[] args) {
+           try {
+               // 验证系统要求
+               NativeLibraryLoader.validateSystemRequirements();
+               
+               // 创建OCR实例（工具类会自动加载本地库）
+               VisionOCR ocr = new VisionOCR();
+               
+               // 执行OCR
+               List<OCRResult> results = ocr.recognizeText("image.jpg");
+               
+               // 处理结果
+               for (OCRResult result : results) {
+                   System.out.println("文本: " + result.getText());
+                   System.out.println("置信度: " + result.getConfidence());
+               }
+               
+           } catch (RuntimeException e) {
+               System.err.println("系统不支持: " + e.getMessage());
+           }
+       }
+   }
+   ```
+
+2. **工具类功能**：
+   - **系统兼容性检查**：`NativeLibraryLoader.validateSystemRequirements()`
+   - **自动库加载**：支持系统路径和JAR嵌入式加载
+   - **系统信息获取**：`NativeLibraryLoader.getOSInfo()`
+   - **macOS检查**：`NativeLibraryLoader.isMacOS()`
+   - **加载状态检查**：`NativeLibraryLoader.isLoaded()`
+
+3. **高级用法**：
+   ```java
+   // 检查系统兼容性
+   if (!NativeLibraryLoader.isMacOS()) {
+       System.err.println("此库仅支持macOS系统");
+       return;
+   }
+   
+   System.out.println("系统信息: " + NativeLibraryLoader.getOSInfo());
+   
+   // 使用中文识别
+   VisionOCR ocr = new VisionOCR();
+   List<OCRResult> results = ocr.recognizeTextWithLanguage("image.jpg", "zh-Hans");
+   
+   // 获取像素坐标
+   for (OCRResult result : results) {
+       OCRResult.PixelBoundingBox pixelBox = result.toPixelBoundingBox(800, 600);
+       System.out.printf("像素位置: (%d, %d, %d, %d)\n",
+           pixelBox.getX(), pixelBox.getY(), 
+           pixelBox.getWidth(), pixelBox.getHeight());
+   }
+   ```
+
+### 方式5：创建可分发的JAR包
+
+使用 `deploy.sh` 脚本创建包含本地库的完整JAR包：
+
+1. **运行部署脚本**：
+   ```bash
+   ./deploy.sh
+   ```
+
+2. **脚本功能**：
+   - 自动检查并构建项目（如果需要）
+   - 将本地库嵌入到JAR的META-INF/native目录
+   - 创建完整的可分发JAR文件
+   - 显示文件大小和内容信息
+
+3. **在目标项目中使用**：
+   ```java
+   import com.applevision.VisionOCR;
+   import com.applevision.util.NativeLibraryLoader;
+   
+   public class MyApp {
+       public static void main(String[] args) {
+           // 直接使用，无需手动指定library.path
+           // NativeLibraryLoader会自动从JAR中提取本地库
+           VisionOCR ocr = new VisionOCR();
+           
+           // 执行OCR
+           var results = ocr.recognizeText("image.jpg");
+           results.forEach(result -> {
+               System.out.println("文本: " + result.getText());
+           });
+       }
+   }
+   ```
+
+4. **运行完整JAR**：
+   ```bash
+   # 直接运行，无需额外参数
+   java -cp applevision-ocr-1.0-complete.jar com.applevision.example.SimpleOCRExample test.jpg
+   ```
+
+### 方式6：手动创建可分发的JAR包
+
+创建一个包含本地库的完整JAR包：
+
+1. **创建包含本地库的JAR**：
+   ```bash
+   # 创建临时目录
+   mkdir -p temp/META-INF/native
+   
+   # 复制本地库
+   cp build/libs/native/libapplevision.dylib temp/META-INF/native/
+   
+   # 解压原JAR
+   cd temp
+   jar -xf ../build/libs/applevision-ocr-1.0.jar
+   
+   # 创建新的完整JAR
+   jar -cf ../applevision-ocr-1.0-complete.jar .
+   cd ..
+   rm -rf temp
+   ```
+
+2. **在目标项目中使用**：
+   ```java
+   public class LibraryLoader {
+       private static boolean loaded = false;
+       
+       public static synchronized void loadLibrary() {
+           if (loaded) return;
+           
+           try {
+               // 从JAR中提取本地库
+               String libName = "libapplevision.dylib";
+               String libPath = "/META-INF/native/" + libName;
+               
+               try (InputStream is = LibraryLoader.class.getResourceAsStream(libPath)) {
+                   if (is == null) {
+                       throw new RuntimeException("Native library not found: " + libPath);
+                   }
+                   
+                   // 创建临时文件
+                   Path tempLib = Files.createTempFile("libapplevision", ".dylib");
+                   Files.copy(is, tempLib, StandardCopyOption.REPLACE_EXISTING);
+                   
+                   // 加载库
+                   System.load(tempLib.toString());
+                   loaded = true;
+                   
+                   // 确保临时文件在JVM退出时被删除
+                   tempLib.toFile().deleteOnExit();
+               }
+           } catch (IOException e) {
+               throw new RuntimeException("Failed to load native library", e);
+           }
+       }
+   }
+   ```
+
+### 示例项目代码
+
+```java
+package com.yourcompany.yourproject;
+
+import com.applevision.OCRResult;
+import com.applevision.VisionOCR;
+import java.util.List;
+
+public class YourOCRApplication {
+    static {
+        // 方式1：如果使用-Djava.library.path
+        // 无需额外代码
+        
+        // 方式2：如果使用嵌入式加载
+        // LibraryLoader.loadLibrary();
+    }
+    
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.println("请提供图像文件路径");
+            return;
+        }
+        
+        try {
+            VisionOCR ocr = new VisionOCR();
+            List<OCRResult> results = ocr.recognizeText(args[0], true);
+            
+            System.out.println("识别结果：");
+            for (OCRResult result : results) {
+                System.out.println("文本: " + result.getText());
+                System.out.println("置信度: " + String.format("%.2f%%", 
+                    result.getConfidence() * 100));
+            }
+        } catch (Exception e) {
+            System.err.println("OCR错误: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+### 部署注意事项
+
+1. **系统要求**：
+   - 目标系统必须是macOS 10.15或更高版本
+   - 目标系统必须安装了Vision框架（通常预装）
+
+2. **库文件管理**：
+   - 本地库(libapplevision.dylib)必须与Java应用一起分发
+   - 建议将库文件嵌入到JAR中以简化部署
+
+3. **权限设置**：
+   - 确保本地库文件具有执行权限
+   - 如果从JAR中提取，可能需要设置权限：
+     ```java
+     tempLib.toFile().setExecutable(true);
+     ```
+
+4. **错误处理**：
+   - 添加适当的异常处理来应对库加载失败
+   - 提供清晰的错误信息和解决方案
+
 ## 使用示例
 
 ### 基本使用
