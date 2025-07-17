@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT jobject JNICALL Java_com_applevision_VisionOCR_recognizeText
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     com_applevision_VisionOCR
+ * Method:    recognizeTextWithLanguage
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
+ */
+JNIEXPORT jobject JNICALL Java_com_applevision_VisionOCR_recognizeTextWithLanguage
+  (JNIEnv *, jobject, jstring, jstring);
+
 #ifdef __cplusplus
 }
 #endif

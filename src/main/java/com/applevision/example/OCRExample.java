@@ -23,37 +23,27 @@ public class OCRExample {
 
         try {
             VisionOCR ocr = new VisionOCR();
-            List<OCRResult> results = ocr.recognizeText(imageFile);
+            
+            // 使用调试模式进行识别
+            List<OCRResult> results = ocr.recognizeText(imageFile.getAbsolutePath(), true);
 
-            System.out.println("OCR Results:");
+            System.out.println("==========================================");
+            System.out.println("OCR 详细结果:");
             for (int i = 0; i < results.size(); i++) {
                 OCRResult result = results.get(i);
-                System.out.println("=== Text Block " + (i + 1) + " ===");
-                System.out.println("Text: \"" + result.getText() + "\"");
-                System.out.println("Confidence: " + String.format("%.2f%%", result.getConfidence() * 100));
+                System.out.println("=== 文本块 " + (i + 1) + " ===");
+                System.out.println("文本: \"" + result.getText() + "\"");
+                System.out.println("置信度: " + String.format("%.2f%%", result.getConfidence() * 100));
                 
                 OCRResult.BoundingBox bbox = result.getBoundingBox();
-                System.out.println("Normalized Position:");
-                System.out.println("  X: " + String.format("%.3f", bbox.getX()));
-                System.out.println("  Y: " + String.format("%.3f", bbox.getY()));
-                System.out.println("  Width: " + String.format("%.3f", bbox.getWidth()));
-                System.out.println("  Height: " + String.format("%.3f", bbox.getHeight()));
-                System.out.println("  Top-Left: (" + String.format("%.3f", bbox.getX()) + ", " + String.format("%.3f", bbox.getY()) + ")");
-                System.out.println("  Bottom-Right: (" + String.format("%.3f", bbox.getMaxX()) + ", " + String.format("%.3f", bbox.getMaxY()) + ")");
-                
-                // 假设一个示例图像尺寸来展示像素坐标
-                int exampleWidth = 800;
-                int exampleHeight = 600;
-                OCRResult.PixelBoundingBox pixelBbox = bbox.toPixelBoundingBox(exampleWidth, exampleHeight);
-                System.out.println("Pixel Position (假设图像尺寸 " + exampleWidth + "x" + exampleHeight + "):");
-                System.out.println("  X: " + pixelBbox.getX() + " px");
-                System.out.println("  Y: " + pixelBbox.getY() + " px");
-                System.out.println("  Width: " + pixelBbox.getWidth() + " px");
-                System.out.println("  Height: " + pixelBbox.getHeight() + " px");
+                System.out.println("位置 (归一化): x=" + String.format("%.3f", bbox.getX()) + 
+                                 ", y=" + String.format("%.3f", bbox.getY()) + 
+                                 ", w=" + String.format("%.3f", bbox.getWidth()) + 
+                                 ", h=" + String.format("%.3f", bbox.getHeight()));
                 System.out.println();
             }
 
-            System.out.println("Total recognized text blocks: " + results.size());
+            System.out.println("总共识别到 " + results.size() + " 个文本块");
         } catch (Exception e) {
             System.err.println("Error performing OCR: " + e.getMessage());
             e.printStackTrace();
