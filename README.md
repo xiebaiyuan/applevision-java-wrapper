@@ -606,10 +606,11 @@ java -Djava.library.path=build/libs/native -cp build/classes \
         <groupId>com.applevision</groupId>
         <artifactId>applevision-java-wrapper</artifactId>
         <version>1.0.0</version>
-        <classifier>complete</classifier>
     </dependency>
 </dependencies>
 ```
+
+**注意**：发布到 GitHub Packages 的 JAR 是 complete 版本，包含了所有必需的本地库，可以直接使用。
 
 ## API 文档
 

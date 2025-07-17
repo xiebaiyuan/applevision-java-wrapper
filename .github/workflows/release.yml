@@ -278,18 +278,10 @@ jobs:
     - name: Publish to GitHub Packages
       if: steps.get_version.outputs.is_release == 'true'
       run: |
-        # 发布完整版 JAR
+        # 发布完整版 JAR 作为主要版本（最常用）
         mvn deploy:deploy-file \
           -DpomFile=pom-github-packages.xml \
           -Dfile=applevision-ocr-${{ steps.get_version.outputs.version }}-complete.jar \
-          -Dclassifier=complete \
-          -DrepositoryId=github \
-          -Durl=https://maven.pkg.github.com/${{ github.repository }}
-          
-        # 发布基础 JAR
-        mvn deploy:deploy-file \
-          -DpomFile=pom-github-packages.xml \
-          -Dfile=build/libs/applevision-ocr-${{ steps.get_version.outputs.version }}.jar \
           -DrepositoryId=github \
           -Durl=https://maven.pkg.github.com/${{ github.repository }}
           
