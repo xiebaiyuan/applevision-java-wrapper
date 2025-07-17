@@ -1,0 +1,70 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.applevision'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// 创建任务来生成JNI头文件
+task generateJNIHeaders(type: Exec) {
+    dependsOn compileJava
+
+    def classpath = sourceSets.main.output.classesDirs.asPath
+    def nativeIncludes = "${buildDir}/generated/jni"
+
+    doFirst {
+        mkdir nativeIncludes
+    }
+
+    commandLine 'javah', '-d', nativeIncludes, '-classpath', classpath, 'com.applevision.VisionOCR'
+
+    doLast {
+        copy {
+            from nativeIncludes
+            into 'src/main/cpp'
+            include '*.h'
+        }
+    }
+}
+
+// 创建任务来编译本地库
+task compileNative(type: Exec) {
+    dependsOn generateJNIHeaders
+
+    workingDir 'src/main/cpp'
+
+    commandLine 'clang++', '-dynamiclib', '-o', 'libapplevision.dylib', 'VisionOCR.mm',
+                '-framework', 'Foundation', '-framework', 'Vision', '-framework', 'AppKit',
+                '-I', "${System.getProperty('java.home')}/../include",
+                '-I', "${System.getProperty('java.home')}/../include/darwin",
+                '-std=c++11'
+
+    doLast {
+        copy {
+            from 'src/main/cpp/libapplevision.dylib'
+            into 'build/libs/native'
+        }
+    }
+}
+
+// 将本地库打包到JAR中
+jar {
+    dependsOn compileNative
+    from('build/libs/native') {
+        into 'META-INF/native'
+    }
+}
+
