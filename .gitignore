@@ -35,9 +35,20 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store!/applevision-ocr-1.0-complete.jar
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-!/applevision-ocr-0.0.1-complete.jar
+### Build artifacts ###
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.jar
+*.dylib
 
-!/TestSystemInfo.class
+### Gradle ###
 .gradle
