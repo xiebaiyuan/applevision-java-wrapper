@@ -67,7 +67,10 @@ fi
 echo "Java 头文件路径: $JAVA_INCLUDE_PATH"
 
 # 编译动态库
-clang++ -dynamiclib -o libapplevision.dylib VisionOCR.mm \
+echo "编译 Universal Binary (支持 x86_64 和 arm64)..."
+
+# 先编译 x86_64 版本
+clang++ -dynamiclib -o libapplevision_x86_64.dylib VisionOCR.mm \
     -framework Foundation \
     -framework Vision \
     -framework AppKit \
@@ -75,9 +78,28 @@ clang++ -dynamiclib -o libapplevision.dylib VisionOCR.mm \
     -I "$JAVA_INCLUDE_DARWIN_PATH" \
     -std=c++11 \
     -fPIC \
+    -arch x86_64 \
     -Wl,-no_compact_unwind
 
-echo "本地库编译完成。"
+# 再编译 arm64 版本
+clang++ -dynamiclib -o libapplevision_arm64.dylib VisionOCR.mm \
+    -framework Foundation \
+    -framework Vision \
+    -framework AppKit \
+    -I "$JAVA_INCLUDE_PATH" \
+    -I "$JAVA_INCLUDE_DARWIN_PATH" \
+    -std=c++11 \
+    -fPIC \
+    -arch arm64 \
+    -Wl,-no_compact_unwind
+
+# 使用 lipo 合并成 universal binary
+lipo -create libapplevision_x86_64.dylib libapplevision_arm64.dylib -output libapplevision.dylib
+
+# 清理临时文件
+rm -f libapplevision_x86_64.dylib libapplevision_arm64.dylib
+
+echo "本地库编译完成 (Universal Binary)。"
 
 # 回到项目根目录
 cd ../../..
