@@ -111,7 +111,12 @@ cp src/main/cpp/libapplevision.dylib build/libs/native/
 # 创建可执行的JAR文件
 echo "创建JAR文件..."
 cd build/classes
-jar -cf ../libs/applevision-ocr-1.0.jar com/
+
+# 获取版本号（从环境变量或默认值）
+VERSION=${VERSION:-"1.0.0"}
+JAR_NAME="applevision-ocr-${VERSION}.jar"
+
+jar -cf "../libs/$JAR_NAME" com/
 cd ../..
 
 echo "构建完成！"
@@ -119,7 +124,7 @@ echo ""
 echo "构建产物位置："
 echo "  - Java classes: build/classes/"
 echo "  - 本地库: build/libs/native/libapplevision.dylib"
-echo "  - JAR文件: build/libs/applevision-ocr-1.0.jar"
+echo "  - JAR文件: build/libs/$JAR_NAME"
 echo ""
 echo "运行示例："
 echo "  java -Djava.library.path=build/libs/native -cp build/classes com.applevision.example.OCRExample <图像文件路径>"

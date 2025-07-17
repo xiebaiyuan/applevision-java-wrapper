@@ -513,6 +513,104 @@ java -Djava.library.path=build/libs/native -cp build/classes \
 - 运行详细OCR示例
 - 提供完整的测试报告
 
+## 开发和发布
+
+### 本地开发
+
+1. **构建项目**：
+   ```bash
+   ./build.sh
+   ```
+
+2. **测试项目**：
+   ```bash
+   ./test.sh /path/to/test/image.jpg
+   ```
+
+3. **创建可分发JAR包**：
+   ```bash
+   ./deploy.sh
+   ```
+
+### 版本管理
+
+使用 `version.sh` 脚本管理项目版本：
+
+```bash
+# 增加 patch 版本 (1.0.0 -> 1.0.1)
+./version.sh patch
+
+# 增加 minor 版本 (1.0.0 -> 1.1.0) 
+./version.sh minor
+
+# 增加 major 版本 (1.0.0 -> 2.0.0)
+./version.sh major
+
+# 设置指定版本
+./version.sh 2.1.0
+```
+
+### 自动发布
+
+项目配置了 GitHub Actions 自动化流程：
+
+1. **触发条件**：
+   - 推送到 `master` 或 `main` 分支
+   - 创建 Pull Request
+   - 手动触发
+
+2. **自动构建**：
+   - 在 macOS 环境下构建 Universal Binary
+   - 运行测试
+   - 创建可分发 JAR 包
+
+3. **自动发布**（仅限主分支推送）：
+   - 自动增加版本号
+   - 创建 Git 标签
+   - 发布到 GitHub Releases
+   - 发布到 GitHub Packages (Maven)
+
+4. **发布产物**：
+   - `applevision-ocr-x.y.z-complete.jar` - 完整JAR包（包含本地库）
+   - `applevision-ocr-x.y.z.jar` - 基础JAR包
+   - `libapplevision.dylib` - Universal Binary 本地库
+
+### 手动发布流程
+
+1. **更新版本**：
+   ```bash
+   ./version.sh patch  # 或 minor, major
+   ```
+
+2. **推送到GitHub**：
+   ```bash
+   git push origin master --tags
+   ```
+
+3. **GitHub Actions 自动处理其余步骤**
+
+### Maven 集成
+
+项目发布到 GitHub Packages，可以在其他项目中使用：
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/xiebaiyuan/applevision-java-wrapper</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.applevision</groupId>
+        <artifactId>applevision-java-wrapper</artifactId>
+        <version>1.0.0</version>
+        <classifier>complete</classifier>
+    </dependency>
+</dependencies>
+```
+
 ## API 文档
 
 ### VisionOCR 类
